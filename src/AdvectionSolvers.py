@@ -125,11 +125,11 @@ class Spectral_Method_1D(Advection_Methods_1D):
 		and u is L periodic, i.e. u[0] = u[N] '''
 
 	def Fourier_Transform(self,signal):
-	''' Performs the fast fourier transform of a signal '''
+		''' Performs the fast fourier transform of a signal '''
 		return np.fft.fft(signal)
 	
 	def Inverse_Fourier_Transform(self,fourier_transform):
-	''' Performs the inverse fast fourier transform of a fourier transform '''
+		''' Performs the inverse fast fourier transform of a fourier transform '''
 		return np.fft.ifft(fourier_transform)
 	
 	def run(self):
