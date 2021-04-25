@@ -121,10 +121,15 @@ class Lax_Wendroff_1D(Advection_Methods):
 
 
 class Spectral_Method(Advection_Methods):
+	''' Spectral Scheme implementation for 1D Constant Advection coefficient. It runs for M time steps 
+		and u is L periodic, i.e. u[0] = u[N] '''
+
     def Fourier_Transform(self,signal):
+    ''' Performs the fast fourier transform of a signal '''
         return np.fft.fft(signal)
     
     def Inverse_Fourier_Transform(self,fourier_transform):
+    ''' Performs the inverse fast fourier transform of a fourier transform '''
         return np.fft.ifft(fourier_transform)
     
     def run(self):
