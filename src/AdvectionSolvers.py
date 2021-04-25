@@ -124,46 +124,46 @@ class Spectral_Method_1D(Advection_Methods_1D):
 	''' Spectral Scheme implementation for 1D Constant Advection coefficient. It runs for M time steps 
 		and u is L periodic, i.e. u[0] = u[N] '''
 
-    def Fourier_Transform(self,signal):
-    ''' Performs the fast fourier transform of a signal '''
-        return np.fft.fft(signal)
-    
-    def Inverse_Fourier_Transform(self,fourier_transform):
-    ''' Performs the inverse fast fourier transform of a fourier transform '''
-        return np.fft.ifft(fourier_transform)
-    
-    def run(self):
-        
-        # Grid:
-        x_grid = self.grid_points(0.0,self.L,self.h)
-        
+	def Fourier_Transform(self,signal):
+	''' Performs the fast fourier transform of a signal '''
+		return np.fft.fft(signal)
+	
+	def Inverse_Fourier_Transform(self,fourier_transform):
+	''' Performs the inverse fast fourier transform of a fourier transform '''
+		return np.fft.ifft(fourier_transform)
+	
+	def run(self):
+		
+		# Grid:
+		x_grid = self.grid_points(0.0,self.L,self.h)
+
 		# Initial Condition:
 		u_new = self.init_cond(x_grid)
-        
-        # Txt to store values
-        a_file = open(self.File_Name+".txt", "w")
-        np.savetxt(a_file,u_new)
-        
-        # Define the vector of fourier space 
-        # Method 1:
-        k_vec_space = np.fft.fftshift(np.arange(- self.N/2 , self.N/2 , 1))
-        
-        # Method 2:
-        # k_vec_space = np.fft.fftfreq(self.N ,d = 1/self.N)
+		
+		# Txt to store values
+		a_file = open(self.File_Name+".txt", "w")
+		np.savetxt(a_file,u_new)
+		
+		# Define the vector of fourier space 
+		# Method 1:
+		k_vec_space = np.fft.fftshift(np.arange(- self.N/2 , self.N/2 , 1))
+		
+		# Method 2:
+		# k_vec_space = np.fft.fftfreq(self.N ,d = 1/self.N)
 
-        # Multiplicative exponential array
-        exponential_factor = np.exp((-2j * np.pi/self.L) * self.a * self.dt * k_vec_space)
-        
-        # Iteration over the time step sizes
-        for k in range(1,self.M+1):
-            
-            u_old = u_new.copy()[:-1] # Change the u_new array to u_old
-            u_old_FFT = self.Fourier_Transform(u_old) # Compute the FT
-            
-            u_new_FFT = u_old_FFT*exponential_factor # Evolve the function one step in the Fourier Space
-            u_new = self.Inverse_Fourier_Transform(u_new_FFT).real # Compute the inverse FT
-            
-            u_new = np.append(u_new , u_new[0])
-            np.savetxt(a_file, u_new) # Save the solution at time step k
-            
-        a_file.close()
+		# Multiplicative exponential array
+		exponential_factor = np.exp((-2j * np.pi/self.L) * self.a * self.dt * k_vec_space)
+		
+		# Iteration over the time step sizes
+		for k in range(1,self.M+1):
+			
+			u_old = u_new.copy()[:-1] # Change the u_new array to u_old
+			u_old_FFT = self.Fourier_Transform(u_old) # Compute the FT
+			
+			u_new_FFT = u_old_FFT*exponential_factor # Evolve the function one step in the Fourier Space
+			u_new = self.Inverse_Fourier_Transform(u_new_FFT).real # Compute the inverse FT
+			
+			u_new = np.append(u_new , u_new[0])
+			np.savetxt(a_file, u_new) # Save the solution at time step k
+			
+		a_file.close()
