@@ -1,6 +1,6 @@
 import numpy as np
 
-class Advection_Methods:
+class Advection_Methods_1D:
 	def __init__(self , L , T , a , init_cond , N , M , File_Name):
 
 		''' Initialization of the Constant Coefficient 1D Advection Solver. 
@@ -29,7 +29,7 @@ class Advection_Methods:
 		'''Construct the grid points'''
 		return np.arange(start_point,grid_size + step_size,step_size)
 
-class Euler_Upwind_1D(Advection_Methods):
+class Euler_Upwind_1D(Advection_Methods_1D):
 	''' Euler Upwind Scheme implementation for 1D Constant Advection coefficient. It runs for M time steps
 		and u is L periodic, i.e. u[0] = u[N] '''
 
@@ -76,7 +76,7 @@ class Euler_Upwind_1D(Advection_Methods):
 		else:
 			raise ValueError('The Courant–Friedrichs–Lewy condition must be satisfied, a*dt/dx must be <= 1')
 
-class Lax_Wendroff_1D(Advection_Methods):
+class Lax_Wendroff_1D(Advection_Methods_1D):
 	''' Lax-Wendroff Scheme implementation for 1D Constant Advection coefficient. It runs for M time steps 
 		and u is L periodic, i.e. u[0] = u[N] '''
 
@@ -120,7 +120,7 @@ class Lax_Wendroff_1D(Advection_Methods):
 			raise ValueError('The Courant–Friedrichs–Lewy condition must be satisfied, a*dt/dx must be <= 1')
 
 
-class Spectral_Method(Advection_Methods):
+class Spectral_Method_1D(Advection_Methods_1D):
 	''' Spectral Scheme implementation for 1D Constant Advection coefficient. It runs for M time steps 
 		and u is L periodic, i.e. u[0] = u[N] '''
 
