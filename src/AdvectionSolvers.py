@@ -191,6 +191,10 @@ class Initialize_Simulation:
 		self.M = M # Divisions of time in M slots
 		self.dt = self.T/self.M # Time step size
 
+	def grid_points(self,start_point, end_point, step_size):
+		'''Construct the grid points'''
+		return np.arange(start_point,end_point + step_size,step_size)
+
 class Advection_Methods_2D(Initialize_Simulation):
 	'''Solves a 2 dimensional advection equation and integrates it in a time interval (0 -> T) 
 		Input: 
@@ -226,10 +230,6 @@ class Advection_Methods_2D(Initialize_Simulation):
 		
 		# L^2 Norm array: L2 norm will be stored
 		self.L2_norm = []
-
-	def grid_points(self,start_point, end_point, step_size):
-		'''Construct the grid points'''
-		return np.arange(start_point,end_point + step_size,step_size)
 
 	def Fourier_Transform(self,signal):
 		''' Performs the fast fourier transform of a signal '''
