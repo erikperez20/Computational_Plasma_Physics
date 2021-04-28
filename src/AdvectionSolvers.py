@@ -168,21 +168,9 @@ class Spectral_Method_1D(Advection_Methods_1D):
 			
 		a_file.close()
 
-class Advection_Methods_2D:
-	'''Solves a 2 dimensional advection equation and integrates it in a time interval (0 -> T) 
-		Input: 
-		- initial_condition: Initial conditions function (x,v) 2 dimensional
-		- x_min, x_max, N_x: Minimum and maximum positions of the container, dimension in the x space with N_x slts
-		- v_min, v_max, N_v: Minimum and maximum velocity of the system, divisions in the v dimension in N_v slots
-		- T, M: Maximum time and number of steps (M slots)
-		- advcoeff_X, advcoeff_V: Advection Coefficient Vectors in the X dimension and V dimension
-		- split_method: Splitting method to use: 'Lax Wendroff', 'Spectral' or 'Euler Upwind'
-		- split_order: order of the splitting method: 1 or 2
-		- file_name: file name to store the solutions '''
+class Initialize_Simulation:
+	def __init__(self, initial_condition, x_min, x_max, N_x, v_min, v_max, N_v, T, M):
 
-	def __init__(self, initial_condition, x_min, x_max, N_x, v_min, v_max, N_v, T, M, advcoeff_X, advcoeff_V, 
-				split_method, split_order ,file_name):
-		
 		# Initial Distribution Function: It can be a (N_v, N_x) array or (N_x, N_v) 
 		self.initial_condition = initial_condition
 
@@ -203,6 +191,23 @@ class Advection_Methods_2D:
 		self.M = M # Divisions of time in M slots
 		self.dt = self.T/self.M # Time step size
 
+class Advection_Methods_2D(Initialize_Simulation):
+	'''Solves a 2 dimensional advection equation and integrates it in a time interval (0 -> T) 
+		Input: 
+		- initial_condition: Initial conditions function (x,v) 2 dimensional
+		- x_min, x_max, N_x: Minimum and maximum positions of the container, dimension in the x space with N_x slts
+		- v_min, v_max, N_v: Minimum and maximum velocity of the system, divisions in the v dimension in N_v slots
+		- T, M: Maximum time and number of steps (M slots)
+		- advcoeff_X, advcoeff_V: Advection Coefficient Vectors in the X dimension and V dimension
+		- split_method: Splitting method to use: 'Lax Wendroff', 'Spectral' or 'Euler Upwind'
+		- split_order: order of the splitting method: 1 or 2
+		- file_name: file name to store the solutions '''
+
+	def __init__(self, initial_condition, x_min, x_max, N_x, v_min, v_max, N_v, T, M, advcoeff_X, advcoeff_V, 
+				split_method, split_order ,file_name):
+
+		Initialize_Simulation.__init__(self, initial_condition, x_min, x_max, N_x, v_min, v_max, N_v, T, M)
+
 		# Advection Coefficient Vectors
 		self.advcoeff_X = advcoeff_X # advection coefficient vector in the X dimension 
 		self.advcoeff_V = advcoeff_V # advection coefficient vector in the Y dimension
@@ -218,12 +223,6 @@ class Advection_Methods_2D:
 		
 		# Total Mass Array: Array where masses will be stored
 		self.TotalMass = []
-
-		# Total Momentum Array: Array where total momentum will be stored
-		self.TotalMomentum = []
-		
-		# Total Energy Array: Array where the total energy will be stored
-		self.TotalEnergy = []
 		
 		# L^2 Norm array: L2 norm will be stored
 		self.L2_norm = []
