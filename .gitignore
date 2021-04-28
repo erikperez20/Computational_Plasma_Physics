@@ -1,1 +1,21 @@
+# Not desire files
 /RecyclableNb/*
+
+# Papers and pdfs
+*.pdf
+
+# Mathematica File
+ExamplesPIC.nb
+
+# Notebook Files
+basic_example_writer_sgskip.ipynb
+
+# Animations:
+*.mp4
+
+# txt files:
+*.txt
+
+# checkpoints:
+.ipynb_checkpoints/
+__pycache__/
