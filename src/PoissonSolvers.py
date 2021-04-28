@@ -290,19 +290,24 @@ class Poisson1D_Periodic_BC_Solver1:
 		''' We construct the R matrix to solve the Ax=R system of equations. We define the function rho applied to the
 		grid points and then replace the end points with the boundary conditions.'''
 		
-		matrix = self.rho(g_points[1:-1])
-		matrix[0] = matrix[0] - self.rho(g_points[0])
-		
+		if hasattr(self.rho, '__call__'):
+			# rho is a function or callable
+			matrix = self.rho(g_points[1:-1])
+			matrix[0] = matrix[0] - self.rho(g_points[0])		
+		else:
+			# rho is an array
+            matrix = self.rho[1:-1].copy()
+            matrix[0] = matrix[0] - self.rho[0]
+
 		return matrix
 	
 	def LinearSolver(self,A_matrix,R_matrix):
 		''' We solve the linear system of equations A_matrix*X = R_matrix for X, then insert the boundary conditions
 		at the start and end of the array'''
 		
-		sol = list(np.array(np.linalg.solve(A_matrix,R_matrix)))
-#         sol.append(sol[0])
-		sol.append(0)
-		sol.insert(0,0)
+		sol = list(np.array(np.linalg.solve(A_matrix,R_matrix))) # Solve linear system
+		sol.append(0) # left BC
+		sol.insert(0,0) # periodic BC u[0] = u[N]
 		return sol
 	
 	def run(self):
