@@ -245,7 +245,6 @@ class Poisson1D_Mixed_BC_Solver2:
 		
 		return solution
 
-
 class Poisson1D_Periodic_BC_Solver1:
 	def __init__(self, a , b , N , rho):
 		
@@ -296,8 +295,8 @@ class Poisson1D_Periodic_BC_Solver1:
 			matrix[0] = matrix[0] - self.rho(g_points[0])		
 		else:
 			# rho is an array
-            matrix = self.rho[1:-1].copy()
-            matrix[0] = matrix[0] - self.rho[0]
+			matrix = self.rho[1:-1].copy()
+			matrix[0] = matrix[0] - self.rho[0]
 
 		return matrix
 	
