@@ -449,13 +449,13 @@ class Advection_Methods_2D(Initialize_Simulation):
 		DistFunc: Dist function (shape: (Vdim,Xdim)) at time t '''
 
 		# Solve Advection Equation in half time step for df/dt - advcoeff_X*df/dv with Euler Upwind Scheme
-		Adv_Euler_sol1 =  self.Euler_Upwind_2D(self.dv, self.dt/2, DistFunc.copy(), self.advcoeff_X).run()
+		Adv_Euler_sol1 =  self.Euler_Upwind_2D(self.dv, self.dt/2, DistFunc.copy(), self.advcoeff_X)
 		Transposed_sol1 = Adv_Euler_sol1.T # Transpose the shape of the matrix to (Xdim,Vdim)
 		# Solve Advection Equation in full time step for df/dt + advcoeff_V*df/dx with Euler Upwind Scheme
-		Adv_Euler_sol2 =  self.Euler_Upwind_2D(self.dx, self.dt, Transposed_sol1, self.advcoeff_V).run()
+		Adv_Euler_sol2 =  self.Euler_Upwind_2D(self.dx, self.dt, Transposed_sol1, self.advcoeff_V)
 		Transposed_sol2 = Adv_Euler_sol2.T # Get back the original shape of the distribution function
 		# Solve Advection Equation in half time step for df/dt - advcoeff_X*df/dv with Euler Upwind Scheme
-		new_distribution =  self.Euler_Upwind_2D(self.dv, self.dt/2, Transposed_sol2, self.advcoeff_X).run()
+		new_distribution =  self.Euler_Upwind_2D(self.dv, self.dt/2, Transposed_sol2, self.advcoeff_X)
 
 		return new_distribution
 	
