@@ -1,8 +1,9 @@
 # Not desire files
 /RecyclableNb/*
 
-# Papers and pdfs
+# Papers and pdfs and doc files
 *.pdf
+*.docx
 
 # Mathematica File
 ExamplesPIC.nb
