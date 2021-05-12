@@ -237,7 +237,9 @@ class PIC(Initialize_Particles, Initialize_Grid):
 			dt: time step
 			q: particle charge (electrons: q = -1) adimensional
 			m: particle mass (electrons: m = 1) adimensional '''
-		velocity_forward = velocity + (q*dt/(2*m)) * electric_field
+		velocity_forward = (velocity + (q*dt/(2*m)) * electric_field)  
+		velocity_forward = (velocity_forward - self.v_min)%(self.v_max - self.v_min) + self.v_min  # Periodic Condition
+
 		return velocity_forward
 
 	def position_advance(self, position, velocity, dt):
@@ -246,6 +248,7 @@ class PIC(Initialize_Particles, Initialize_Grid):
 			velocity: velocities of all particles at any time
 			dt: time step'''
 		position_forward = position + dt*velocity
+		position_forward = (position_forward - self.x_min)%(self.x_max - self.x_min) + self.x_min  # Periodic Condition
 		
 		return position_forward
 
@@ -314,7 +317,7 @@ class PIC(Initialize_Particles, Initialize_Grid):
 
 		# In the second step we evolve the electric field at half time step
 		E_forward = self.electric_field_advance(x_forward, v_half, x_0, v_0, x_grid, xmin, xmax, Nx, v_grid, 
-			N_k, bsfunc, knot_vec, spl_idx, spl_degree, control_var, samp_dist )
+			N_k, bsfunc, knot_vec, spl_idx, spl_degree, control_var, samp_dist)
 		
 		# In the third step we calculate the velocity at time t_n+1
 		v_forward = self.velocity_advance(v_half, E_forward, dt, q, m)
