@@ -8,9 +8,14 @@ class Initialize_Particles:
 		- x_min, x_max: Minimum and maximum positions of the container
 		- v_min, v_max, N_v: Minimum and maximum velocity of the system
 		- x_distribution, v_distribution: Initial position and velocity sampling of particles, it can be uniform or normal
+		- x_distribution_params, y_distribution_params: An array with 2 parameters:
+								If x,y_distribution = 'uniform': x,y_distribution_params = [x,v_min; x,v_max - x,v_min = length]
+								If x,y_distribution = 'normal': x,y_distribution_params = [mean, standard_deviation]
+
 		- charge, mass: particles adimensional charge and mass. For electrons (charge = -1, mass = 1)'''
 
-	def __init__(self, Nk, x_min, x_max, x_distribution, v_min, v_max, v_distribution, charge, mass):
+	def __init__(self, Nk, x_min, x_max, x_distribution, x_distribution_params, v_min, v_max, v_distribution, 
+				v_distribution_params, charge, mass):
 		
 		self.Nk = Nk # Number of particles or markers in the simulation
 		self.x_max = x_max
@@ -20,17 +25,23 @@ class Initialize_Particles:
 		self.charge = charge 
 		self.mass = mass
 
+		# Parameters of the distributions:
+		self.x_distribution_params = x_distribution_params
+		self.v_distribution_params = v_distribution_params
+
 		if x_distribution == 'uniform':
 			# The positions distribution comes from a uniform distribution with a = 0 and b = L_x
-			self.positions_sampling = uniform.rvs(size = self.Nk, loc = 0, scale = self.x_max - self.x_min)
+			self.positions_sampling = uniform.rvs(size = self.Nk, loc = self.x_distribution_params[0], scale = self.x_distribution_params[1])
 		elif x_distribution == 'normal':
-			self.positions_sampling = norm.rvs(size = self.Nk, loc = 0, scale = 1)
+			pos_sampling = norm.rvs(size = self.Nk, loc = self.x_distribution_params[0], scale = self.x_distribution_params[1])
+			self.positions_sampling = (pos_sampling - self.x_min)%(self.x_max - self.x_min) + self.x_min  # Periodic Condition
 		
 		if v_distribution == 'normal':
 			# The velocities distribution comes from a normal distribution with mu = 0 and sigma = 1.
-			self.velocities_sampling = norm.rvs(size = self.Nk, loc = 0, scale = 1 )
+			vel_sampling = norm.rvs(size = self.Nk, loc = self.v_distribution_params[0], scale = self.v_distribution_params[1])
+			self.velocities_sampling = (vel_sampling - self.v_min)%(self.v_max - self.v_min) + self.v_min  # Periodic Condition
 		elif v_distribution == 'uniform':
-			self.velocities_sampling = uniform.rvs(size = self.Nk, loc = 0, scale = self.v_max - self.v_min)
+			self.velocities_sampling = uniform.rvs(size = self.Nk, loc = self.v_distribution_params[0], scale = self.v_distribution_params[1])
 
 class Initialize_Grid:
 	''' Initialize the grid where the fields and densities will be calculated 
@@ -55,7 +66,6 @@ class Initialize_Grid:
 		return np.arange(start_point,end_point + step_size,step_size)
 
 
-
 class PIC(Initialize_Particles, Initialize_Grid):
 	''' Class that implements a solver for an Electrostatic Particle in Cell algorithm. 
 		Inputs:
@@ -63,10 +73,11 @@ class PIC(Initialize_Particles, Initialize_Grid):
 		- sampling_distribution: a function that describes the initial distribution of positions and velocities of al particles
 		- control_variate: function that controls the variation of the density of particles
 		- spline_degree: degree of the B-spline interpolation to calculate the macroparticles properties in the grid '''
-	def __init__(self, N_k, charge, mass, x_min, x_max, N_x, x_distribution, v_min, v_max, N_v, v_distribution, T, M, sampling_distribution, 
-					control_variate, spline_degree, file_name):
+	def __init__(self, N_k, charge, mass, x_min, x_max, N_x, x_distribution, x_distribution_params, v_min, v_max, N_v, 
+				v_distribution, v_distribution_params, T, M, sampling_distribution, control_variate, spline_degree, file_name):
 
-		Initialize_Particles.__init__(self, N_k, x_min, x_max, x_distribution, v_min, v_max, v_distribution, charge, mass)
+		Initialize_Particles.__init__(self, N_k, x_min, x_max, x_distribution, x_distribution_params, v_min, v_max, 
+										v_distribution, v_distribution_params, charge, mass)
 		Initialize_Grid.__init__(self, x_min, x_max, N_x, v_min, v_max, N_v)
 
 		# Time
