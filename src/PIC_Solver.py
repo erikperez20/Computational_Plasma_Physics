@@ -11,6 +11,7 @@ class Initialize_Particles:
 		- x_distribution_params, y_distribution_params: An array with 2 parameters:
 								If x,y_distribution = 'uniform': x,y_distribution_params = [x,v_min; x,v_max - x,v_min = length]
 								If x,y_distribution = 'normal': x,y_distribution_params = [mean, standard_deviation]
+								If v_distribution = 'binormal': v_distribution_params = [mean1, std1, n_b, mean2, std2]
 
 		- charge, mass: particles adimensional charge and mass. For electrons (charge = -1, mass = 1)'''
 
@@ -40,8 +41,21 @@ class Initialize_Particles:
 			# The velocities distribution comes from a normal distribution with mu = 0 and sigma = 1.
 			vel_sampling = norm.rvs(size = self.Nk, loc = self.v_distribution_params[0], scale = self.v_distribution_params[1])
 			self.velocities_sampling = (vel_sampling - self.v_min)%(self.v_max - self.v_min) + self.v_min  # Periodic Condition
+		
 		elif v_distribution == 'uniform':
 			self.velocities_sampling = uniform.rvs(size = self.Nk, loc = self.v_distribution_params[0], scale = self.v_distribution_params[1])
+		
+		elif v_distribution == 'binormal':
+			''' Create the sampling of the velocities of different currents. The mean velocity and standard deviation of
+			each normal distribution of velocities must be specified. Also the weight n_b of the first current, i.e. 
+			the proportion of particles whose velocities will come from the sampling distribution of the first current must be 
+			specified. The other (1-n_b) proportion of particles will have a velocity that comes from the sampling distribution
+			of the second current. '''
+			current1 = norm.rvs(size = int(self.Nk*self.v_distribution_params[2]), loc = self.v_distribution_params[0],
+								scale = self.v_distribution_params[1])
+			current2 = norm.rvs(size = self.Nk - int(self.Nk*self.v_distribution_params[2]), loc = self.v_distribution_params[3],
+								scale = self.v_distribution_params[4])
+			self.velocities_sampling = np.concatenate((current1,current2))
 
 class Initialize_Grid:
 	''' Initialize the grid where the fields and densities will be calculated 
