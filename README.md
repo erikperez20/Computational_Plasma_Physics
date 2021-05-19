@@ -8,3 +8,8 @@ Development of numerical tools to solve a 1D-1V Vlasov-Poisson system and a Part
 
 ### Two Stream Instability
 ![](2StreamInstability.gif)
+
+## Particle in Cell Simulations:
+
+### Non Linear Landau Damping
+![](PIC_Landau.gif)
