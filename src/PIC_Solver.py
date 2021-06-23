@@ -1,6 +1,35 @@
 import numpy as np
 import PoissonSolvers
 from scipy.stats import uniform,norm
+from scipy.optimize import minimize
+import scipy.integrate as integrate
+
+def montecarlo_sampling(func, num_part, xlimits, vlimits, maxfunc):
+	''' Function to sample from an arbitrary distribution function. The function func is a function of position 
+	and velocity, num_part is the number of particles to sample, xlimits is the lower and upper limits in the x dimension: [lower, upper].
+	vlimits is the lower and upper limits in the v dimension: [lower,upper], maxfunc is the maximum value the function can have.'''
+	count = 0 # counter
+	x_samples = [] # list to store the positions
+	v_samples = [] # list to store the velocities
+	while count < num_part: # loop until the number of particles is reached
+		x_samp = uniform.rvs(loc = xlimits[0], scale = xlimits[1]-xlimits[0]) # position sample
+		v_samp = uniform.rvs(loc = vlimits[0], scale = vlimits[1]-vlimits[0]) # velocity sample 
+		z_samp = func(x_samp,v_samp) # evaluate at function
+		r = uniform.rvs(loc = 0.0, scale = maxfunc) # control random number
+		
+		if z_samp > r: # Condition of acceptance: if func(x,v) > r then we accept the particle coordinate
+			x_samples.append(x_samp) 
+			v_samples.append(v_samp)
+			count+=1 #increment the counter
+
+	return np.array(x_samples),np.array(v_samples)
+
+def function_maximize(func):
+	''' This function uses the function minimize to maximize a to parameter function. It is used to maximize the
+	sampling distribution function '''
+	aux_func = lambda x: -func(x[0], x[1])
+	res = minimize(aux_func, [0.1,0.1], method = 'nelder-mead')
+	return -res.fun
 
 class Initialize_Particles:
 	''' Initialize distribution of particles 
@@ -16,7 +45,7 @@ class Initialize_Particles:
 		- charge, mass: particles adimensional charge and mass. For electrons (charge = -1, mass = 1)'''
 
 	def __init__(self, Nk, x_min, x_max, x_distribution, x_distribution_params, v_min, v_max, v_distribution, 
-				v_distribution_params, charge, mass):
+				v_distribution_params, sampling_distribution, charge, mass):
 		
 		self.Nk = Nk # Number of particles or markers in the simulation
 		self.x_max = x_max
@@ -26,13 +55,17 @@ class Initialize_Particles:
 		self.charge = charge 
 		self.mass = mass
 
+		# Sampling distribution: function of x and v
+		self.sampling_distribution = sampling_distribution
+
 		# Parameters of the distributions:
 		self.x_distribution_params = x_distribution_params
 		self.v_distribution_params = v_distribution_params
 
 		if x_distribution == 'uniform':
 			# The positions distribution comes from a uniform distribution with a = 0 and b = L_x
-			self.positions_sampling = uniform.rvs(size = self.Nk, loc = self.x_distribution_params[0], scale = self.x_distribution_params[1])
+			self.positions_sampling = uniform.rvs(size = self.Nk, loc = self.x_distribution_params[0], 
+												scale = self.x_distribution_params[1] - self.x_distribution_params[0])
 		elif x_distribution == 'normal':
 			pos_sampling = norm.rvs(size = self.Nk, loc = self.x_distribution_params[0], scale = self.x_distribution_params[1])
 			self.positions_sampling = (pos_sampling - self.x_min)%(self.x_max - self.x_min) + self.x_min  # Periodic Condition
@@ -43,7 +76,8 @@ class Initialize_Particles:
 			self.velocities_sampling = (vel_sampling - self.v_min)%(self.v_max - self.v_min) + self.v_min  # Periodic Condition
 		
 		elif v_distribution == 'uniform':
-			self.velocities_sampling = uniform.rvs(size = self.Nk, loc = self.v_distribution_params[0], scale = self.v_distribution_params[1])
+			self.velocities_sampling = uniform.rvs(size = self.Nk, loc = self.v_distribution_params[0],
+													scale = self.v_distribution_params[1] - self.v_distribution_params[0])
 		
 		elif v_distribution == 'binormal':
 			''' Create the sampling of the velocities of different currents. The mean velocity and standard deviation of
@@ -56,6 +90,12 @@ class Initialize_Particles:
 			current2 = norm.rvs(size = self.Nk - int(self.Nk*self.v_distribution_params[2]), loc = self.v_distribution_params[3],
 								scale = self.v_distribution_params[4])
 			self.velocities_sampling = np.concatenate((current1,current2))
+
+		if x_distribution == 'sampling' and v_distribution == 'sampling':
+			
+			self.positions_sampling, self.velocities_sampling = montecarlo_sampling(self.sampling_distribution,
+																self.Nk, self.x_distribution_params, self.v_distribution_params,
+																function_maximize(self.sampling_distribution))
 
 class Initialize_Grid:
 	''' Initialize the grid where the fields and densities will be calculated 
@@ -91,16 +131,13 @@ class PIC(Initialize_Particles, Initialize_Grid):
 				v_distribution, v_distribution_params, T, M, sampling_distribution, control_variate, spline_degree, file_name):
 
 		Initialize_Particles.__init__(self, N_k, x_min, x_max, x_distribution, x_distribution_params, v_min, v_max, 
-										v_distribution, v_distribution_params, charge, mass)
+										v_distribution, v_distribution_params, sampling_distribution, charge, mass)
 		Initialize_Grid.__init__(self, x_min, x_max, N_x, v_min, v_max, N_v)
 
 		# Time
 		self.T = T # Max Time
 		self.M = M # Divisions of time in M slots
 		self.dt = self.T/self.M # Time step size
-
-		# Sampling distribution: function of x and v
-		self.sampling_distribution = sampling_distribution
 
 		# Control Variate function
 		self.control_variate = control_variate
@@ -133,19 +170,14 @@ class PIC(Initialize_Particles, Initialize_Grid):
 			return np.where(np.logical_and(x >= knots[j], x < knots[j+1]), np.ones(x.shape), np.zeros(x.shape))
 		
 		elif k > 0:
-			
 			if knots[j+k] == knots[j]:
 				c1 = np.zeros(x.shape)
-			
 			else:
 				c1 = (x - knots[j])/(knots[j+k] - knots[j]) * self.bspline(x,k-1,j,knots)
-			
 			if knots[j+k+1] == knots[j+1]:
 				c2 = np.zeros(x.shape)
-			
 			else:
 				c2 = (knots[j+k+1] - x)/(knots[j+k+1] - knots[j+1]) * self.bspline(x,k-1,j+1,knots)
-				
 			return c1 + c2
 
 	def find_indexes(self, grid, coordinates):
@@ -162,7 +194,7 @@ class PIC(Initialize_Particles, Initialize_Grid):
 		# Return the array of  minimum values between the min vals
 		return np.amin(min_vals,axis=1)
 
-	def calculate_weights(self, x_grid, v_grid, particle_positions, particle_velocities, hist2D):
+	def calculate_weights(self, x_grid, v_grid, particle_positions, particle_velocities, hist2D_normalized, hist2D):
 		'''Function to calculate the weights of all particles:
 		x_grid: positions grid
 		v_grid: velocities grid
@@ -173,8 +205,14 @@ class PIC(Initialize_Particles, Initialize_Grid):
 		idx_ys = self.find_indexes(v_grid,particle_velocities) # velocities indexes
 		idx_xs = self.find_indexes(x_grid,particle_positions) # positions indexes
 
+		integral = integrate.dblquad(self.sampling_distribution, self.v_min, self.v_max, lambda x: self.x_min, lambda x: self.x_max)[0]
+		hist2D_normalized = hist2D_normalized*integral*self.dx*self.dv
+
+		areas = hist2D_normalized[idx_ys, idx_xs]
+		particle_counts = hist2D[idx_ys, idx_xs]
+
 		# Evaluate the indices in the 2D particle histogram
-		return hist2D[idx_ys,idx_xs]
+		return areas/particle_counts
 
 	def particle_density(self, x_t, v_t, x_0, v_0, x_mesh, Lx, weights, Nk, bs_func, k_vec, sp_idx, spl_degree, control_var, samp_dist):
 		''' This function calculates the particle density in each mesh point due to the contribution of all particles in 
@@ -297,13 +335,16 @@ class PIC(Initialize_Particles, Initialize_Grid):
 		samp_dist: sampling distribution of functions '''
 
 		### Histogram of particles evolved in one time step
-		# Define the histogram of the particles distribution in phase space
-		hist2D, xedges, yedges = np.histogram2d(part_x_forward, part_v_half, 
-													bins = (x_grid,v_grid), density = True)
-		hist2D = hist2D.T # transpose to have a shape of (N_v, N_x)
+		# Define the normalized histogram of the particles distribution in phase space
+		hist2D_normal,_,_ = np.histogram2d(part_x_forward, part_v_half, bins = (x_grid,v_grid), density = True)
+		hist2D_normal = hist2D_normal.T # transpose to have a shape of (N_v, N_x)
 		
+		# Define the not normalized histogram of the particles distribution in phase space
+		hist2D,_,_ = np.histogram2d(part_x_forward, part_v_half, bins = (x_grid,v_grid))
+		hist2D = hist2D.T # transpose to have a shape of (N_v, N_x)
+
 		# Calculate the particle weights
-		wk = self.calculate_weights(x_grid, v_grid, part_x_forward, part_v_half, hist2D)
+		wk = self.calculate_weights(x_grid, v_grid, part_x_forward, part_v_half, hist2D_normal, hist2D)
 
 		# Calculate the density at half time step
 		density = self.particle_density(part_x_forward, part_v_half, x_0, v_0, x_grid, xmax-xmin, wk,
